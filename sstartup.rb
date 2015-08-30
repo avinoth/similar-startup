@@ -13,36 +13,36 @@ end
 class Angel
   def initialize
     @angel_url = "https://api.angel.co/1"
-    @angel_token = ENV["ANGEL_TOKEN"]
+    @angel_token = ENV['ANGEL_TOKEN']
   end
 
   def get_similar startup_name
     startup = find_startup startup_name
     unless startup.present?
-      puts "Couldn't find the startup from search."
+      puts "Couldn't find the #{startup_name} from search."
       return false
     end
 
-    puts "Found the startup from search. Getting more info. ID - #{startup["id"]}"
+    puts "Found #{startup_name} in AngelList. It's name is - '#{startup['name']}'' Getting more info."
 
     startup = fetch_info startup["id"].to_s
     if startup["hidden"]
-      puts "Startup have it's details hidden. Couldn't proceed."
+      puts "#{startup_name} have it's details hidden in AngelList. Couldn't proceed."
       return false
     end
 
     if startup["markets"].present?
-      puts "Got more Info about the Startup. Fetching Market Tags and their children count. ID - #{startup["id"]}"
+      puts "Got more Info about #{startup_name}. Fetching Market Tags and their children count."
       tags_hash = fetch_tag_children startup["markets"]
     elsif startup["locations"].present?
-      puts "The startup has no Market tags. Fetching from Location tags. ID - #{startup["id"]}"
+      puts "#{startup_name} has no Market tags. Fetching it's Location tags."
       tags_hash = fetch_tag_children startup["locations"]
     else
-      puts "The startup has no Location Tags or Market tags. Couldn't proceed. ID - #{startup["id"]}"
+      puts "#{startup_name} has neither Location Tags nor Market tags. Couldn't proceed."
       return false
     end
 
-    puts "Got Tag Information. Getting startups from the tag. ID - #{startup["id"]}"
+    puts "Got Tag Information. Getting startups from the tag."
     similar = {}
     tags_hash.each do |k, v|
       similar = find_startup_by_tag k
@@ -110,4 +110,18 @@ class Angel
     resp = HTTParty.get url
     JSON.parse(resp.body)
   end
+end
+
+startup = ARGV[0]
+unless startup.present?
+  puts 'Please provide a startup name..'
+end
+
+angel = Angel.new
+similar = angel.get_similar startup
+if similar.present?
+  puts "Name: #{similar[:name]}"
+  puts "Summary: #{similar[:summary]}"
+else
+  puts "Unable to find similar startup for #{startup}"
 end
